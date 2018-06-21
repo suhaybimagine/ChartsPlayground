@@ -71,8 +71,8 @@
 		3771417D20D8F5C500539C36 /* ChartsPlayground */ = {
 			isa = PBXGroup;
 			children = (
-				37083F9C20DA36F100503BAF /* TimeUnitStepper.swift */,
 				37F5D7B120D9064800B8EC77 /* Markers */,
+				37083F9C20DA36F100503BAF /* TimeUnitStepper.swift */,
 				3771417E20D8F5C500539C36 /* AppDelegate.swift */,
 				3771418020D8F5C500539C36 /* LineViewController.swift */,
 				37F5D7B220D90DE300B8EC77 /* BarViewController.swift */,

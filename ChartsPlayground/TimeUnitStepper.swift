@@ -32,10 +32,11 @@ class TimeUnitStepper: UIView {
         self.displayTime()
     }
     
-    
     @IBOutlet weak var timeLabel:UILabel!
     @IBOutlet weak var nextButton:UIButton!
     @IBOutlet weak var prevButton:UIButton!
+    
+    var refDate = Date()
     
     var value:Int = 0
     var start:Date = Date()
@@ -46,8 +47,9 @@ class TimeUnitStepper: UIView {
     var unit:TimeUnit {
         
         set{
+            let prev = self._unit
             self._unit = newValue
-            self.recalculateValue()
+            self.recalculateValue(prev)
             self.calculateTime()
             self.displayTime()
         }
@@ -65,13 +67,13 @@ class TimeUnitStepper: UIView {
         switch self.unit {
         case .day:
             
-            date1 = Calendar.current.startOfDay(for: Date())
+            date1 = Calendar.current.startOfDay(for: refDate)
             component = .day
             
         case .week:
             
             date1 = Calendar.current.date(from:
-                Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+                Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: refDate)
             )!
             
             component = .weekOfYear
@@ -79,16 +81,16 @@ class TimeUnitStepper: UIView {
         case .month:
             
             date1 = Calendar.current.date(from:
-                Calendar.current.dateComponents([.year, .month], from: Date())
+                Calendar.current.dateComponents([.year, .month], from: refDate)
             )!
             
             component = .month
             
         case .quarter:
             
-            var comps = Calendar.current.dateComponents([.year, .month], from: Date())
-            let months = comps.month!
-            comps.month = months - (months % 3)
+            var comps = Calendar.current.dateComponents([.year, .month], from: refDate)
+            let months = Double( comps.month! )
+            comps.month = Int( (ceil( months / 3.0 ) - 1 ) * 3 ) + 1
             
             date1 = Calendar.current.date(from: comps)!
             component = .month
@@ -97,7 +99,7 @@ class TimeUnitStepper: UIView {
         case .year:
             
             date1 = Calendar.current.date(from:
-                Calendar.current.dateComponents([.year], from: Date())
+                Calendar.current.dateComponents([.year], from: refDate)
             )!
             
             component = .year
@@ -123,30 +125,53 @@ class TimeUnitStepper: UIView {
             df.dateFormat = "ww, yyyy"
         case .month:
             df.dateFormat = "MMM, yyyy"
-            date = self.start.addingTimeInterval(self.duration / 2.0)
         case .quarter:
             df.dateFormat = "QQQ, yyyy"
-            date = self.start.addingTimeInterval(self.duration / 2.0)
         case .year:
             df.dateFormat = "yyyy"
+        }
+        
+        switch self.unit {
+        case .week, .month, .quarter:
+            date = self.start.addingTimeInterval(self.duration / 2.0)
+        default:
+            break
         }
         
         self.timeLabel.text = df.string(from: date)
     }
     
-    private func recalculateValue() -> Void {
+    private func recalculateValue(_ prev:TimeUnit ) -> Void {
+        
+        if prev == .quarter {
+            self.start = Calendar.current.date(byAdding: .day, value: 1, to: self.start)!
+            self.end = self.start.addingTimeInterval(self.duration)
+        }
         
         switch self.unit {
         case .day:
-            self.value = Calendar.current.dateComponents([.day], from: Date(), to: self.start).day!
+            self.value = Calendar.current.dateComponents([.day], from: refDate, to: self.start).day!
         case .week:
-            self.value = Calendar.current.dateComponents([.weekOfYear], from: Date(), to: self.start).weekOfYear!
+            self.value = Calendar.current.dateComponents([.weekOfYear], from: refDate, to: self.start).weekOfYear!
         case .month:
-            self.value = Calendar.current.dateComponents([.month], from: Date(), to: self.start).month!
+            self.value = Calendar.current.dateComponents([.month], from: refDate, to: self.start).month!
         case .quarter:
-            self.value = Int( ceil(Double(Calendar.current.dateComponents([.month], from: Date(), to: self.start).month!) / 3.0) )
+            
+            var comps = Calendar.current.dateComponents([.year, .month], from: refDate)
+            var months = Double(comps.month!)
+            comps.month = Int( (ceil( months / 3.0 ) - 1 ) * 3 ) + 1
+            
+            let date1 = Calendar.current.date(from: comps)!
+            
+            comps = Calendar.current.dateComponents([.year, .month], from: self.start)
+            months = Double(comps.month!)
+            comps.month = Int( (ceil( months / 3.0 ) - 1 ) * 3 ) + 1
+            
+            let date2 = Calendar.current.date(from: comps)!
+            self.value = Int( floor( Double(Calendar.current.dateComponents([.month], from: date1, to: date2).month!) / 3.0 ) )
+            
         case .year:
-            self.value = Calendar.current.dateComponents([.year], from: Date(), to: self.start).year!
+            self.value = Calendar.current.dateComponents([.year], from: refDate, to: self.start).year!
         }
     }
     
